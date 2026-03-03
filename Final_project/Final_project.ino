@@ -5,24 +5,26 @@ RFID1 rfid;
 LiquidCrystal lcd(7,6,5,4,3,2);
 
 
-const int AIN1 = 5;
-const int AIN2 = 6;
-const int PWMA = 7;
+const int AIN1 = 48;
+const int AIN2 = 46;
+const int PWMA = 44;
 
-const int BIN1 = 4;
-const int BIN2 = 3;
-const int PWMB = 2;
+const int BIN1 = 50;
+const int BIN2 = 52;
+const int PWMB = 53;
 // initialize means a value is given
-int switchVal = analogRead(A0); // digital values may include 0 or 1  
+int switchVal = analoglRead(A0); // digital values may include 0 or 1  
 // declaring a datatype is assigning 
 float distance = 0.0;
 
-const int trigPin = 13, echoPin = 12;
-
+const int trigPin = A10, echoPin = A11;
+const int trigPin2 = A12, echoPin2 = A13
 
 void setup() {  // void set up only runs 1 iteration 
   pinMode(trigPin,OUTPUT);
   pinMode(echoPin,INPUT);
+  pinMode(trigPin2,OUTPUT);
+  pinMode(echoPin2,INPUT);
   pinMode(11,INPUT_PULLUP);
 
   pinMode(AIN1,OUTPUT);
