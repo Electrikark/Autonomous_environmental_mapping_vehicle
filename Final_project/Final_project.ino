@@ -27,16 +27,18 @@ const int trigPin2 = A12, echoPin2 = A13;
 const int RED = 35;
 const int GREEN = 39;
 const int BLUE = 37;
-
+const int SPEAKERPIN = 47;
 const int M_SIZE = 10;
 int memIndex = 0;
 bool memFilled = false;
 float memory[2][M_SIZE];
+float sum = 0;
+float average_left = 1;
+float average_right = 1;
 
 const int LIGHT_ANALOG = A8;
 const int LIGHT_DIGITAL = 31;
 int lightLevel = analogRead(LIGHT_ANALOG);
-
 void update_Memory(float leftDist, float rightDist) {
   memory[0][memIndex] = leftDist;
   memory[1][memIndex] = rightDist;
@@ -77,7 +79,47 @@ float getDistance() {
 
   return calculatedDistance;
 }
+void turnRight(int turnSpeed, int ms) {
+  // Left motor forward
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
 
+  // Right motor backward
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+
+  analogWrite(PWMA, turnSpeed);
+  analogWrite(PWMB, turnSpeed);
+
+  delay(ms);
+
+  STOP(); 
+}
+void turnLeft(int turnSpeed, int ms) {
+  // Left motor backward
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+
+  // Right motor forward
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+
+  analogWrite(PWMA, turnSpeed);
+  analogWrite(PWMB, turnSpeed);
+
+  delay(ms);
+
+  STOP(); // optional
+}
+float avg(int dimension){
+  int sum = 0;
+  int average = 0;
+  for (int i = 0; i < M_SIZE; i++) {
+    sum+=memory[dimension][i]
+    }
+  average=M_SIZE/sum
+  return average
+}
 float getDistance2() {
   float echoTime2, calculatedDistance1;
   digitalWrite(trigPin2,HIGH);
@@ -89,7 +131,9 @@ float getDistance2() {
 
   return calculatedDistance1;
 }
-
+void STOP() {
+  spinMotor(0);
+}
 void spinMotor(int motorSpeed) {
   if (motorSpeed > 0) {
     digitalWrite(AIN1, HIGH);
@@ -142,14 +186,14 @@ void setup() {
   pinMode(echoPin,INPUT);
   pinMode(trigPin2,OUTPUT);
   pinMode(echoPin2,INPUT);
-
+  pinMode(SPEAKERPIN,OUTPUT);
   pinMode(LIGHT_DIGITAL, INPUT);
 
   pinMode(38,INPUT_PULLUP);
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
-
+  
   pinMode(AIN1,OUTPUT);
   pinMode(AIN2,OUTPUT);
   pinMode(PWMA,OUTPUT);
@@ -161,7 +205,7 @@ void setup() {
   lcd.begin(16,2);
   lcd.print("Hello");
 }
-
+// Set up buzzer alter
 void loop() {
   distance = getDistance();
   distance2 = getDistance2();
@@ -169,20 +213,58 @@ void loop() {
   lightLevel = analogRead(LIGHT_ANALOG);
 
   update_Memory(distance, distance2);
-  update_Memory(distance, distance2);
 
   Serial.println(lightLevel);
   Serial.println("Distance of left side = " + String(distance));
   Serial.println("Distance of right side = " + String(distance2));
   Serial.println(String(switchVal));
+  if (lightLevel<300) or memFilled = false{
+    STOP();
+    emit_red();
+  }
+  else{
+    if (switchVal>=1){
+      // left sensor
+      average_left=avg(0);
+      // right sensor
+      average_right=avg(1);
+    
+      if average_left<25.0 and average_right<25.0{
+        avoid();
+        // tone(speakerPin, 1000);
+        
+        }
+      else if (average_left<average_right){
+        turnRight(200, 350);
+        //noTone(speakerPin);           
+        }
+      else if (average_right<average_left){
+        turnLeft(200, 350);
+        //noTone(speakerPin);           
 
+        }
+      else{
+        spinMotor(200);   
+        //noTone(speakerPin);           
+
+      }
+      delay(1000);
+
+    
+     else{
+       STOP();
+     }
+      
+    }
+  }
+  
   // for (int i = 0; i < M_SIZE; i++){
   //   Serial.println(memory[0][i]);
   //   Serial.println(memory[1][i]);
   // }
 
   delay(1000);
-
+  
   // for (int i = 0; i < M_SIZE; i++) {
   //   Serial.print("L["); Serial.print(i); Serial.print("]=");
   //   Serial.print(memory[0][i]);
