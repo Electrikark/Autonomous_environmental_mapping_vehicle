@@ -6,9 +6,8 @@
 #include "rfid1.h"
 RFID1 rfid;
 
-#include  <LiquidCrystal.h>
+#include <LiquidCrystal.h>
 LiquidCrystal lcd(22,24,26,28,30,32);
-
 
 const int AIN1 = 48;
 const int AIN2 = 46;
@@ -17,201 +16,209 @@ const int PWMA = 44;
 const int BIN1 = 50;
 const int BIN2 = 52;
 const int PWMB = 53;
-// initialize means a value is given
-int switchVal = analogRead(A0);float distance = 0.0;
+
+int switchVal = analogRead(A0);
+float distance = 0.0;
+float distance2 = 0.0;
 
 const int trigPin = A10, echoPin = A11;
 const int trigPin2 = A12, echoPin2 = A13;
+
 const int RED = 35;
 const int GREEN = 39;
 const int BLUE = 37;
-const int M_SIZE = 10
-int memIndex = 0;        
-bool memFilled = false;  
+
+const int M_SIZE = 10;
+int memIndex = 0;
+bool memFilled = false;
 float memory[2][M_SIZE];
-void update_Memory(float leftDist, float rightDist){
-  memory[0][memIndex]=leftDist;
-  memory[0][memIndex]=rightDist;
-  memIndex++
-  if (memIndex>M_SIZE){
-    memIndex=0;
-    memFilled = True;  
+
+const int LIGHT_ANALOG = A8;
+const int LIGHT_DIGITAL = 31;
+int lightLevel = analogRead(LIGHT_ANALOG);
+
+void update_Memory(float leftDist, float rightDist) {
+  memory[0][memIndex] = leftDist;
+  memory[1][memIndex] = rightDist;
+
+  memIndex++;
+  if (memIndex >= M_SIZE) {
+    memIndex = 0;
+    memFilled = true;
+  }
 }
-void emit_red(){
+
+void emit_red() {
   analogWrite(RED,128);
   analogWrite(BLUE,0);
-
   analogWrite(GREEN,0);
 }
-void emit_green(){
+
+void emit_green() {
   analogWrite(RED,0);
   analogWrite(BLUE,128);
-
   analogWrite(GREEN,0);
 }
 
-void emit_blue(){
+void emit_blue() {
   analogWrite(RED,0);
   analogWrite(BLUE,0);
-
   analogWrite(GREEN,128);
 }
-float getDistance (){ // defining a function get distacne
-  float echoTime, calculatedDistance; // local variables 
-  digitalWrite(trigPin,HIGH); // turns on
+
+float getDistance() {
+  float echoTime, calculatedDistance;
+  digitalWrite(trigPin,HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin,LOW);
 
-
   echoTime = pulseIn(echoPin, HIGH);
+  calculatedDistance = echoTime/148.0;
 
-  calculatedDistance= echoTime/148.0;
-
-  return calculatedDistance; // INDICATOR THIS IS NON VOID 
-//   // IN THIS CASE THIS NON VOID FUNCITON IS RETURNING A FLOAT VALUE
-
+  return calculatedDistance;
 }
-float getDistance2 (){ // defining a function get distacne
-  float echoTime2, calculatedDistance1; // local variables 
-  digitalWrite(trigPin2,HIGH); // turns on
+
+float getDistance2() {
+  float echoTime2, calculatedDistance1;
+  digitalWrite(trigPin2,HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin2,LOW);
 
-
   echoTime2 = pulseIn(echoPin2, HIGH);
+  calculatedDistance1 = echoTime2/148.0;
 
-  calculatedDistance1= echoTime2/148.0;
-
-  return calculatedDistance1; // INDICATOR THIS IS NON VOID 
-  // IN THIS CASE THIS NON VOID FUNCITON IS RETURNING A FLOAT VALUE
-
+  return calculatedDistance1;
 }
-void spinMotor(int motorSpeed){ 
-  
-  // conditional
-  if(motorSpeed>0){
-        // forward on for motor a
+
+void spinMotor(int motorSpeed) {
+  if (motorSpeed > 0) {
     digitalWrite(AIN1, HIGH);
     digitalWrite(AIN2, LOW);
     Serial.println("A works");
 
-    // forward on for motor B
     digitalWrite(BIN1, HIGH);
-    digitalWrite(BIN2, LOW); // all it does turn the forward or reverse signal
+    digitalWrite(BIN2, LOW);
     Serial.println("B works");
   }
-  else if (motorSpeed<0){
-    //Backwards
+  else if (motorSpeed < 0) {
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, HIGH);
 
-    // backwards  on for motor B
     digitalWrite(BIN1, LOW);
-    digitalWrite(BIN2, HIGH); // all it does turn the forward or reverse signal 
-
-
+    digitalWrite(BIN2, HIGH);
   }
   else {
-      //OFF
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, LOW);
 
-    // OFF
     digitalWrite(BIN1, LOW);
-    digitalWrite(BIN2, LOW); // all it does turn the forward or reverse signal 
-
+    digitalWrite(BIN2, LOW);
   }
 
-    analogWrite(PWMA, abs(motorSpeed) ); // analog write CANNOT BE NEGATIVE 
-    analogWrite(PWMB,  abs(motorSpeed));
-
+  analogWrite(PWMA, abs(motorSpeed));
+  analogWrite(PWMB, abs(motorSpeed));
 }
-// function calling 2 other functions
-void avoid(){  // usre defined function 
+
+void avoid() {
   spinMotor(-255);
   delay(1000);
+
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
 
   digitalWrite(BIN1, LOW);
-  digitalWrite(BIN2, HIGH); // all it does turn the forward or reverse signal 
-  analogWrite(PWMA, abs(255)); // analog write CANNOT BE NEGATIVE 
-  analogWrite(PWMB,  abs(255));
+  digitalWrite(BIN2, HIGH);
+
+  analogWrite(PWMA, abs(255));
+  analogWrite(PWMB, abs(255));
   delay(1000);
 }
 
+void setup() {
+  // pin 13 photoresistor digital
+  // Pin A8 Analog
 
-void setup() {  // void set up only runs 1 iteration 
-// ultrasonic sensors
   pinMode(trigPin,OUTPUT);
   pinMode(echoPin,INPUT);
   pinMode(trigPin2,OUTPUT);
   pinMode(echoPin2,INPUT);
 
-  pinMode(38,INPUT_PULLUP); // button
-  pinMode(RED, OUTPUT); 
+  pinMode(LIGHT_DIGITAL, INPUT);
+
+  pinMode(38,INPUT_PULLUP);
+  pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
+
   pinMode(AIN1,OUTPUT);
   pinMode(AIN2,OUTPUT);
   pinMode(PWMA,OUTPUT);
   pinMode(BIN1,OUTPUT);
   pinMode(BIN2,OUTPUT);
   pinMode(PWMB,OUTPUT);
-  Serial.begin(9600); // Initialize serial communication at 9600 baud rate
+
+  Serial.begin(9600);
   lcd.begin(16,2);
   lcd.print("Hello");
-
-
 }
 
+void loop() {
+  distance = getDistance();
+  distance2 = getDistance2();
+  switchVal = digitalRead(38);
+  lightLevel = analogRead(LIGHT_ANALOG);
 
-void loop() { 
-  distance = getDistance();  
-  distance2= getDistance2();
+  update_Memory(distance, distance2);
+  update_Memory(distance, distance2);
+
+  Serial.println(lightLevel);
   Serial.println("Distance of left side = " + String(distance));
   Serial.println("Distance of right side = " + String(distance2));
-  switchVal = digitalRead(38); // switchval is ressassigned to a new value 
-  Serial.println(String(distance));
-  
   Serial.println(String(switchVal));
-  emit_red();
-  
+
+  // for (int i = 0; i < M_SIZE; i++){
+  //   Serial.println(memory[0][i]);
+  //   Serial.println(memory[1][i]);
+  // }
+
   delay(1000);
-  emit_green();
-  delay(1000);
 
-  emit_blue();
-  delay(1000);
-
-
-
-  //spinMotor(-200);
-  // /boolean value: true or false
-  // boolean expression evaluates to true or false
-  // if else is a joint conditional statement 
-//   if (switchVal >=1){ // turned switch on // inside the expression is a boolean expression returning true or False 
-//     if (distance > 15.0){ // 2 boolean expressions in this
-//       spinMotor(255);
-
-//     }                       // conditional statements can account for if-elses 
-//     else {
-//       avoid(); // spin motor, avoid , and and
-
-//     }
-//     delay(100); // calling the delay function and giving the functino an argument- the value you give the function 
-//   }
-  
-//   else {
-//     spinMotor(0);
-//     // Serial.print('\nnot working');
-    
-//   }
-//     delay(100); 
+  // for (int i = 0; i < M_SIZE; i++) {
+  //   Serial.print("L["); Serial.print(i); Serial.print("]=");
+  //   Serial.print(memory[0][i]);
+  //   Serial.print(" R["); Serial.print(i); Serial.print("]=");
+  //   Serial.println(memory[1][i]);
+  // }
 }
+
+// emit_red();
+// delay(1000);
+// emit_green();
+// delay(1000);
+
+// emit_blue();
+// delay(1000);
+
+// spinMotor(-200);
+// boolean value: true or false
+// boolean expression evaluates to true or false
+// if else is a joint conditional statement
+
+// if (switchVal >=1){
+//   if (distance > 15.0){
+//     spinMotor(255);
+//   }
+//   else {
+//     avoid();
+//   }
+//   delay(100);
+// }
+// else {
+//   spinMotor(0);
+// }
+// delay(100);
+
 // NON VOID FUNCTION RETURNING A VALUE
-// declaring the datatype of the non void function 
+// declaring the datatype of the non void function
 
-
-
-// defining a function  ( void- doesn't return any value)
+// defining a function (void - doesn't return any value)
