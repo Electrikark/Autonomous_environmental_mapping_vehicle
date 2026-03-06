@@ -130,17 +130,22 @@ void emit_red() {
   analogWrite(BLUE, 0);
   analogWrite(GREEN, 0);
 }
-
+//  changed the analog write blue and green as chat said, I'll switch it if it doesn't work out
 void emit_green() {
   analogWrite(RED, 0);
-  analogWrite(BLUE, 128);
-  analogWrite(GREEN, 0);
+  analogWrite(BLUE, 0);
+  analogWrite(GREEN, 128);
 }
 
 void emit_blue() {
   analogWrite(RED, 0);
+  analogWrite(BLUE, 128);
+  analogWrite(GREEN, 0);
+}
+void emit_nothing() {
+  analogWrite(RED, 0);
+  analogWrite(GREEN, 0);
   analogWrite(BLUE, 0);
-  analogWrite(GREEN, 128);
 }
 
 // =====================================================
@@ -264,8 +269,7 @@ float getDistance2() {
 // LOOP
 // =====================================================
 void loop() {
-  tone(1000, 47);
-
+  tone(47, 1000);
   distance = getDistance();
   distance2 = getDistance2();
 
@@ -281,29 +285,41 @@ void loop() {
 
   if (lightLevel > 700 || !memFilled) {
     STOP();
+    emit_nothing();
     emit_red();
+    emit_green();
+    emit_blue();
+
+
     delay(500);
 
     Serial.print("beginning");
-
+    lcd.print("Turned off");
     if (!memFilled) {
       lcd.clear();
       lcd.print("Not set up yet");
     }
   } 
   else {
+    emit_nothing();
     if (switchVal >= 1) {
+      
       average_left = avg(0);
       average_right = avg(1);
       float diff = average_left - average_right;
       // MAIN
       if (average_left > 35.0 && average_right > 35.0) {
+        emit_nothing();
+        emit_green();
+
         Serial.print("forward");
         lcd.clear();
         lcd.print("FORWARD");
         spinMotor(200);
       } 
       else if (average_left < 20 || average_right < 20) {
+        emit_nothing();
+        emit_red();
         lcd.clear();
         lcd.print("TOO CLOSE");
 
@@ -315,6 +331,9 @@ void loop() {
         }
       } 
       else {
+          emit_nothing();
+          emit_green();
+          emit_red();
         if (abs(diff) <= 5) {
           lcd.clear(); 
           lcd.print("STRAIGHT");
@@ -333,8 +352,11 @@ void loop() {
       }
 
       delay(1000);
-    } else {
+    } 
+    else {
+      emit_nothing();
       STOP();
+      
     }
   }
 
