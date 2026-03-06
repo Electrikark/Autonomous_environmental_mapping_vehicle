@@ -7,8 +7,16 @@
 RFID1 rfid;
 
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(22,24,26,28,30,32);
+LiquidCrystal lcd(32, 30, 33, 26, 24, 22);
 
+// -------- FUNCTION PROTOTYPES --------
+void STOP();
+void spinMotor(int motorSpeed);
+void turnRight(int turnSpeed, int ms);
+void turnLeft(int turnSpeed, int ms);
+float avg(int dimension);
+
+// -------- MOTOR PINS --------
 const int AIN1 = 48;
 const int AIN2 = 46;
 const int PWMA = 44;
@@ -17,6 +25,7 @@ const int BIN1 = 50;
 const int BIN2 = 52;
 const int PWMB = 53;
 
+// -------- SENSOR VARIABLES --------
 int switchVal = analogRead(A0);
 float distance = 0.0;
 float distance2 = 0.0;
@@ -24,67 +33,123 @@ float distance2 = 0.0;
 const int trigPin = A10, echoPin = A11;
 const int trigPin2 = A12, echoPin2 = A13;
 
+// -------- RGB --------
 const int RED = 35;
 const int GREEN = 39;
 const int BLUE = 37;
+
+// -------- SPEAKER --------
 const int SPEAKERPIN = 47;
+
+// -------- MEMORY --------
 const int M_SIZE = 10;
 int memIndex = 0;
 bool memFilled = false;
+
 float memory[2][M_SIZE];
+
 float sum = 0;
 float average_left = 1;
 float average_right = 1;
 
+// -------- LIGHT SENSOR --------
 const int LIGHT_ANALOG = A8;
 const int LIGHT_DIGITAL = 31;
 int lightLevel = analogRead(LIGHT_ANALOG);
+
+// =====================================================
+// SETUP
+// =====================================================
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+
+  pinMode(SPEAKERPIN, OUTPUT);
+
+  pinMode(LIGHT_DIGITAL, INPUT);
+  pinMode(38, INPUT_PULLUP);
+
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
+
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(PWMA, OUTPUT);
+
+  pinMode(BIN1, OUTPUT);
+  pinMode(BIN2, OUTPUT);
+  pinMode(PWMB, OUTPUT);
+
+  pinMode(47, OUTPUT);
+
+  Serial.begin(9600);
+
+  lcd.begin(16, 2);
+  lcd.print("Hello");
+  delay(5000);
+}
+
+float getDistance() {
+  float echoTime;
+  float calculatedDistance;
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  echoTime = pulseIn(echoPin, HIGH);
+  calculatedDistance = echoTime / 148.0;
+
+  return calculatedDistance;
+}
+
+// =====================================================
+// MEMORY FUNCTION
+// =====================================================
 void update_Memory(float leftDist, float rightDist) {
   memory[0][memIndex] = leftDist;
   memory[1][memIndex] = rightDist;
 
   memIndex++;
+
   if (memIndex >= M_SIZE) {
     memIndex = 0;
     memFilled = true;
   }
 }
 
+// =====================================================
+// RGB LED
+// =====================================================
 void emit_red() {
-  analogWrite(RED,128);
-  analogWrite(BLUE,0);
-  analogWrite(GREEN,0);
+  analogWrite(RED, 128);
+  analogWrite(BLUE, 0);
+  analogWrite(GREEN, 0);
 }
 
 void emit_green() {
-  analogWrite(RED,0);
-  analogWrite(BLUE,128);
-  analogWrite(GREEN,0);
+  analogWrite(RED, 0);
+  analogWrite(BLUE, 128);
+  analogWrite(GREEN, 0);
 }
 
 void emit_blue() {
-  analogWrite(RED,0);
-  analogWrite(BLUE,0);
-  analogWrite(GREEN,128);
+  analogWrite(RED, 0);
+  analogWrite(BLUE, 0);
+  analogWrite(GREEN, 128);
 }
 
-float getDistance() {
-  float echoTime, calculatedDistance;
-  digitalWrite(trigPin,HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin,LOW);
-
-  echoTime = pulseIn(echoPin, HIGH);
-  calculatedDistance = echoTime/148.0;
-
-  return calculatedDistance;
-}
+// =====================================================
+// TURN FUNCTIONS
+// =====================================================
 void turnRight(int turnSpeed, int ms) {
-  // Left motor forward
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
 
-  // Right motor backward
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
 
@@ -92,15 +157,13 @@ void turnRight(int turnSpeed, int ms) {
   analogWrite(PWMB, turnSpeed);
 
   delay(ms);
-
-  STOP(); 
+  STOP();
 }
+
 void turnLeft(int turnSpeed, int ms) {
-  // Left motor backward
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, HIGH);
 
-  // Right motor forward
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
 
@@ -108,32 +171,35 @@ void turnLeft(int turnSpeed, int ms) {
   analogWrite(PWMB, turnSpeed);
 
   delay(ms);
-
-  STOP(); // optional
+  STOP();
 }
-float avg(int dimension){
-  int sum = 0;
-  int average = 0;
-  for (int i = 0; i < M_SIZE; i++) {
-    sum+=memory[dimension][i]
-    }
-  average=M_SIZE/sum
-  return average
-}
-float getDistance2() {
-  float echoTime2, calculatedDistance1;
-  digitalWrite(trigPin2,HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin2,LOW);
 
-  echoTime2 = pulseIn(echoPin2, HIGH);
-  calculatedDistance1 = echoTime2/148.0;
+// =====================================================
+// AVERAGE FUNCTION
+// =====================================================
+float avg(int dimension) {
+  float sum = 0;
+  int count;
 
-  return calculatedDistance1;
+  if (memFilled) count = M_SIZE;
+  else count = memIndex;
+
+  if (count == 0) return 0;
+
+  for (int i = 0; i < count; i++) {
+    sum += memory[dimension][i];
+  }
+
+  return sum / count;
 }
+
+// =====================================================
+// MOTOR CONTROL
+// =====================================================
 void STOP() {
   spinMotor(0);
 }
+
 void spinMotor(int motorSpeed) {
   if (motorSpeed > 0) {
     digitalWrite(AIN1, HIGH);
@@ -143,15 +209,13 @@ void spinMotor(int motorSpeed) {
     digitalWrite(BIN1, HIGH);
     digitalWrite(BIN2, LOW);
     Serial.println("B works");
-  }
-  else if (motorSpeed < 0) {
+  } else if (motorSpeed < 0) {
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, HIGH);
 
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, HIGH);
-  }
-  else {
+  } else {
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, LOW);
 
@@ -163,6 +227,9 @@ void spinMotor(int motorSpeed) {
   analogWrite(PWMB, abs(motorSpeed));
 }
 
+// =====================================================
+// AVOID FUNCTION
+// =====================================================
 void avoid() {
   spinMotor(-255);
   delay(1000);
@@ -173,42 +240,35 @@ void avoid() {
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
 
-  analogWrite(PWMA, abs(255));
-  analogWrite(PWMB, abs(255));
+  analogWrite(PWMA, 255);
+  analogWrite(PWMB, 255);
+
   delay(1000);
 }
 
-void setup() {
-  // pin 13 photoresistor digital
-  // Pin A8 Analog
+float getDistance2() {
+  float echoTime2;
+  float calculatedDistance1;
 
-  pinMode(trigPin,OUTPUT);
-  pinMode(echoPin,INPUT);
-  pinMode(trigPin2,OUTPUT);
-  pinMode(echoPin2,INPUT);
-  pinMode(SPEAKERPIN,OUTPUT);
-  pinMode(LIGHT_DIGITAL, INPUT);
+  digitalWrite(trigPin2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin2, LOW);
 
-  pinMode(38,INPUT_PULLUP);
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
-  
-  pinMode(AIN1,OUTPUT);
-  pinMode(AIN2,OUTPUT);
-  pinMode(PWMA,OUTPUT);
-  pinMode(BIN1,OUTPUT);
-  pinMode(BIN2,OUTPUT);
-  pinMode(PWMB,OUTPUT);
+  echoTime2 = pulseIn(echoPin2, HIGH);
+  calculatedDistance1 = echoTime2 / 148.0;
 
-  Serial.begin(9600);
-  lcd.begin(16,2);
-  lcd.print("Hello");
+  return calculatedDistance1;
 }
-// Set up buzzer alter
+
+// =====================================================
+// LOOP
+// =====================================================
 void loop() {
+  tone(1000, 47);
+
   distance = getDistance();
   distance2 = getDistance2();
+
   switchVal = digitalRead(38);
   lightLevel = analogRead(LIGHT_ANALOG);
 
@@ -218,89 +278,65 @@ void loop() {
   Serial.println("Distance of left side = " + String(distance));
   Serial.println("Distance of right side = " + String(distance2));
   Serial.println(String(switchVal));
-  if (lightLevel<300) or memFilled = false{
+
+  if (lightLevel > 700 || !memFilled) {
     STOP();
     emit_red();
-  }
-  else{
-    if (switchVal>=1){
-      // left sensor
-      average_left=avg(0);
-      // right sensor
-      average_right=avg(1);
-    
-      if average_left<25.0 and average_right<25.0{
-        avoid();
-        // tone(speakerPin, 1000);
-        
-        }
-      else if (average_left<average_right){
-        turnRight(200, 350);
-        //noTone(speakerPin);           
-        }
-      else if (average_right<average_left){
-        turnLeft(200, 350);
-        //noTone(speakerPin);           
+    delay(500);
 
-        }
-      else{
-        spinMotor(200);   
-        //noTone(speakerPin);           
+    Serial.print("beginning");
 
+    if (!memFilled) {
+      lcd.clear();
+      lcd.print("Not set up yet");
+    }
+  } 
+  else {
+    if (switchVal >= 1) {
+      average_left = avg(0);
+      average_right = avg(1);
+      float diff = average_left - average_right;
+      // MAIN
+      if (average_left > 35.0 && average_right > 35.0) {
+        Serial.print("forward");
+        lcd.clear();
+        lcd.print("FORWARD");
+        spinMotor(200);
+      } 
+      else if (average_left < 20 || average_right < 20) {
+        lcd.clear();
+        lcd.print("TOO CLOSE");
+
+        if (average_left < average_right) {
+          turnRight(200, 250);
+        } 
+        else {
+          turnLeft(200, 250);
+        }
+      } 
+      else {
+        if (abs(diff) <= 5) {
+          lcd.clear(); 
+          lcd.print("STRAIGHT");
+          spinMotor(180);
+        } 
+        else if (diff > 0) {
+          lcd.clear(); 
+          lcd.print("LEFT");
+          turnLeft(180, 150);
+        } 
+        else {
+          lcd.clear(); 
+          lcd.print("RIGHT");
+          turnRight(180, 150);
+    }
       }
-      delay(1000);
 
-    
-     else{
-       STOP();
-     }
-      
+      delay(1000);
+    } else {
+      STOP();
     }
   }
-  
-  // for (int i = 0; i < M_SIZE; i++){
-  //   Serial.println(memory[0][i]);
-  //   Serial.println(memory[1][i]);
-  // }
 
   delay(1000);
-  
-  // for (int i = 0; i < M_SIZE; i++) {
-  //   Serial.print("L["); Serial.print(i); Serial.print("]=");
-  //   Serial.print(memory[0][i]);
-  //   Serial.print(" R["); Serial.print(i); Serial.print("]=");
-  //   Serial.println(memory[1][i]);
-  // }
 }
-
-// emit_red();
-// delay(1000);
-// emit_green();
-// delay(1000);
-
-// emit_blue();
-// delay(1000);
-
-// spinMotor(-200);
-// boolean value: true or false
-// boolean expression evaluates to true or false
-// if else is a joint conditional statement
-
-// if (switchVal >=1){
-//   if (distance > 15.0){
-//     spinMotor(255);
-//   }
-//   else {
-//     avoid();
-//   }
-//   delay(100);
-// }
-// else {
-//   spinMotor(0);
-// }
-// delay(100);
-
-// NON VOID FUNCTION RETURNING A VALUE
-// declaring the datatype of the non void function
-
-// defining a function (void - doesn't return any value)
