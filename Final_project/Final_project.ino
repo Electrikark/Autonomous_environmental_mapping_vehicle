@@ -186,10 +186,15 @@ float avg(int dimension) {
   float sum = 0;
   int count;
 
-  if (memFilled) count = M_SIZE;
-  else count = memIndex;
-
-  if (count == 0) return 0;
+  if (memFilled){
+    count = M_SIZE;
+  }
+  else {
+    count = memIndex;
+  }
+  if (count == 0) {
+    return 0;
+  }
 
   for (int i = 0; i < count; i++) {
     sum += memory[dimension][i];
