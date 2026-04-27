@@ -266,7 +266,7 @@ void loop() {
   switchVal = digitalRead(38);
   lightLevel = analogRead(LIGHT_ANALOG);
 
-  update_Memory(distance, distance2);
+   update_Memory(distance, distance2); // new data being added and replaced based upon the iteration
 
   Serial.println(lightLevel);
   Serial.println("Distance of left side = " + String(distance));
@@ -294,11 +294,11 @@ void loop() {
     emit_nothing();
     if (switchVal >= 1) {
       
-      average_left = avg(0);
-      average_right = avg(1);
+      average_left = avg(0); // built procedure being applied
+      average_right = avg(1); // built procedure being applied
       float diff = average_left - average_right;
       // MAIN
-      if (average_left > 35.0 && average_right > 35.0) {
+      if (average_left > 35.0 && average_right > 35.0) { // average_left and average_right being directly derived from avg which accesses and creates new data 
         emit_nothing();
         emit_green();
 
